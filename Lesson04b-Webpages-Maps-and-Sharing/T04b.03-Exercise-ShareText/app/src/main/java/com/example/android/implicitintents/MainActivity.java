@@ -52,7 +52,17 @@ public class MainActivity extends AppCompatActivity {
      */
     public void onClickOpenAddressButton(View v) {
         String addressString = "1600 Amphitheatre Parkway, CA";
-        Uri addressUri = Uri.parse("geo:0,0?q=" + addressString);
+		//Cambio la forma de crear addressUri, por la forma mas pro 
+		// con un new Uri.Builder q lo hace por mi y hay menos 
+		//probabilidad de error.
+        //Uri addressUri = Uri.parse("geo:0,0?q=" + addressString);
+		Uri addressUri = new Uri.Builder().scheme("geo")
+			authority("0,0")
+			//.path()
+			//.appendPath()
+			//.query()
+			.appendQueryParameter("q", addressString)
+			.build();
         showMap(addressUri);
     }
 
@@ -64,9 +74,10 @@ public class MainActivity extends AppCompatActivity {
      */
     public void onClickShareTextButton(View v) {
         // TODO (5) Specify a String you'd like to share
-
+		String s = "Mi prueba de texto para compartir desde mi app";
         // TODO (6) Replace the Toast with shareText, passing in the String from step 5
-        Toast.makeText(this, "TODO: Share text when this is clicked", Toast.LENGTH_LONG).show();
+        //Toast.makeText(this, "TODO: Share text when this is clicked", Toast.LENGTH_LONG).show();
+		shareText(s);
     }
 
     /**
@@ -142,10 +153,16 @@ public class MainActivity extends AppCompatActivity {
 
     // TODO (1) Create a void method called shareText that accepts a String as a parameter
     // Do steps 2 - 4 within the shareText method
-
+	private void shareText(String str){
         // TODO (2) Create a String variable called mimeType and set it to "text/plain"
-
+		String mimeType = "text/plain";
         // TODO (3) Create a title for the chooser window that will pop up
-
+		String chooserTitle = "Share with...";
         // TODO (4) Use ShareCompat.IntentBuilder to build the Intent and start the chooser
+		ShareCompat.IntentBuilder.from(this)
+			.setType(mimeType)
+			.setChooserTitle(chooserTitle)
+			.setText(str)
+			.startChooser();
+	}
 }
