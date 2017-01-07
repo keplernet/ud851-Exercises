@@ -21,6 +21,7 @@ import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +36,8 @@ import java.net.URL;
 
 public class MainActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<String> {
+
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     /* A constant to save and restore the URL that is being displayed */
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
@@ -77,7 +80,13 @@ public class MainActivity extends AppCompatActivity implements
         /*
          * Initialize the loader
          */
+        //Esta linea mira si ya existe un loader y lo reutiliza (si no crea uno nuevo):
+        //If at the point of call the caller (supongo q MainActivity) is in its started state (o sea visible),
+        // and the requested loader already exists and has generated its data,
+        // then callback LoaderManager.LoaderCallbacks.onLoadFinished will be called immediately
+        Log.d(TAG, "onCreate : before initLoader(...)");
         getSupportLoaderManager().initLoader(GITHUB_SEARCH_LOADER, null, this);
+        Log.d(TAG, "onCreate : after initLoader(...)");
     }
 
     /**
@@ -127,9 +136,17 @@ public class MainActivity extends AppCompatActivity implements
         LoaderManager loaderManager = getSupportLoaderManager();
         Loader<String> githubSearchLoader = loaderManager.getLoader(GITHUB_SEARCH_LOADER);
         if (githubSearchLoader == null) {
+            //Nota mia: Por lo q veo, aqui nunca entra, ya que, al arrancar la app,
+            // onCreate ejecuta loaderManager.initLoader(GITHUB_SEARCH_LOADER,..), asi q al dar al
+            // boton de buscar se ejecuta este metodo pero githubSearchLoader ya no es null,
+            // asi q en este metodo nunca es null!!
+            Log.d(TAG, "makeGithubSearchQuery : before initLoader(...)");
             loaderManager.initLoader(GITHUB_SEARCH_LOADER, queryBundle, this);
+            Log.d(TAG, "makeGithubSearchQuery : after initLoader(...)");
         } else {
+            Log.d(TAG, "makeGithubSearchQuery : before restartLoader(...)");
             loaderManager.restartLoader(GITHUB_SEARCH_LOADER, queryBundle, this);
+            Log.d(TAG, "makeGithubSearchQuery : after restartLoader(...)");
         }
     }
 
@@ -166,12 +183,14 @@ public class MainActivity extends AppCompatActivity implements
         return new AsyncTaskLoader<String>(this) {
 
             // TODO (1) Create a String member variable called mGithubJson that will store the raw JSON
+            private String mGithubJson;
 
             @Override
             protected void onStartLoading() {
-
+                Log.d(TAG, "onCreateLoader - AsyncTaskLoader - onStartLoading : Starting");
                 /* If no arguments were passed, we don't have a query to perform. Simply return. */
                 if (args == null) {
+                    Log.d(TAG, "onCreateLoader - AsyncTaskLoader - onStartLoading : args == null -> returning");
                     return;
                 }
 
@@ -182,17 +201,27 @@ public class MainActivity extends AppCompatActivity implements
                 mLoadingIndicator.setVisibility(View.VISIBLE);
 
                 // TODO (2) If mGithubJson is not null, deliver that result. Otherwise, force a load
-                forceLoad();
+                if(mGithubJson != null){
+
+//                    Log.d(TAG, "onCreateLoader - AsyncTaskLoader - onStartLoading : before deliverResult()");
+                    deliverResult(mGithubJson);
+//                    Log.d(TAG, "onCreateLoader - AsyncTaskLoader - onStartLoading : after deliverResult()");
+                } else {
+                    Log.d(TAG, "onCreateLoader - AsyncTaskLoader - onStartLoading : before forceLoad()");
+                    forceLoad();
+                    Log.d(TAG, "onCreateLoader - AsyncTaskLoader - onStartLoading : after forceLoad()");
+                }
             }
 
             @Override
             public String loadInBackground() {
-
+                Log.d(TAG, "onCreateLoader - AsyncTaskLoader - loadInBackground : Starting");
                 /* Extract the search query from the args using our constant */
                 String searchQueryUrlString = args.getString(SEARCH_QUERY_URL_EXTRA);
 
                 /* If the user didn't enter anything, there's nothing to search for */
                 if (searchQueryUrlString == null || TextUtils.isEmpty(searchQueryUrlString)) {
+                    Log.d(TAG, "onCreateLoader - AsyncTaskLoader - loadInBackground :  queryUrlString (in args) == null -> returning");
                     return null;
                 }
 
@@ -200,6 +229,7 @@ public class MainActivity extends AppCompatActivity implements
                 try {
                     URL githubUrl = new URL(searchQueryUrlString);
                     String githubSearchResults = NetworkUtils.getResponseFromHttpUrl(githubUrl);
+                    //mGithubJson = "whatever";
                     return githubSearchResults;
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -208,12 +238,41 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             // TODO (3) Override deliverResult and store the data in mGithubJson
-            // TODO (4) Call super.deliverResult after storing the data
+            @Override
+            public void deliverResult(String data) {
+                Log.d(TAG, "onCreateLoader - AsyncTaskLoader - deliverResult : Starting");
+                //NOTA MIA: Esto lo hacemos para que cuando hemos buscado algo y cambiamos de app
+                // y volvemos a esta app NO vuelva a hacer peticion de los datos (sino que reutilice
+                // los datos q ya habia buscado antes),
+                // y por lo q veo, basta con que guarde cualquier cosa a modo de flag q indique
+                // q ya se ha buscado, por ejemplo basta con q aqui guardara cualquier cosa
+                // en mGithubJson, simplemente para que en onStartLoading(..) no entre en el else
+                // q ejecuta el forceLoad() q es lo q llama a loadInBackGround(..)
+                // (Si se vuelve a pinchar el boton de search eso llama a
+                // loaderManager.restartLoader(GITHUB_SEARCH_LOADER, ..) q se encarga de resetear
+                // el loader y asi se vuelve a hacer el forceLoad() y ejecutar la peticion de datos,
+                // asi q no hay problema).
+                //
+                // De hecho, ni siquiera es necesario hacerlo en este metodo, sino que si
+                // en loadInBackGround(..) guardo el flag (o sea guardo cualquier cosa
+                // en mGithubJson, tambien valdria!!
+                // Lo dejo aqui, pq me parece mas limpio el codigo, para separar cosas,
+                // y tb por ocultar el progressBar (mLoadingIndicator)
+                mGithubJson = data;
+
+                //NOTA: Añado esto pq progressBar se quedaba visible
+                mLoadingIndicator.setVisibility(View.INVISIBLE);
+
+                // TODO (4) Call super.deliverResult after storing the data
+                super.deliverResult(data);
+            }
+
         };
     }
 
     @Override
     public void onLoadFinished(Loader<String> loader, String data) {
+        Log.d(TAG, "onLoadFinished :  starting");
 
         /* When we finish loading, we want to hide the loading indicator from the user. */
         mLoadingIndicator.setVisibility(View.INVISIBLE);
@@ -231,6 +290,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onLoaderReset(Loader<String> loader) {
+        Log.d(TAG, "onLoaderReset :  starting");
         /*
          * We aren't using this method in our example application, but we are required to Override
          * it to implement the LoaderCallbacks<String> interface
