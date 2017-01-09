@@ -16,22 +16,37 @@
 
 package com.udacity.example.quizexample;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.Cursor;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+
+import com.udacity.example.droidtermsprovider.DroidTermsExampleContract;
 
 /**
  * Gets the data from the ContentProvider and shows a series of flash cards.
  */
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+    implements LoaderManager.LoaderCallbacks<Cursor>{
 
     // The current state of the app
     private int mCurrentState;
 
     // TODO (3) Create an instance variable storing a Cursor called mData
     private Button mButton;
+    private Cursor mData;
+
+    //ALAN: Creo el ID para el Loader
+    private static final int QUIZ_EXAMPLE_LOADER_ID = 73839832;
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     // This state is when the word definition is hidden and clicking the button will therefore
     // show the definition
@@ -51,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
         mButton = (Button) findViewById(R.id.button_next);
 
         // TODO (5) Create and execute your AsyncTask here
+        getSupportLoaderManager().initLoader(QUIZ_EXAMPLE_LOADER_ID, null, this);
     }
 
     /**
@@ -94,5 +110,51 @@ public class MainActivity extends AppCompatActivity {
     // TODO (2) In the doInBackground method, write the code to access the DroidTermsExample
     // provider and return the Cursor object
     // TODO (4) In the onPostExecute method, store the Cursor object in mData
+    //ALAN: En lugar de hacer un AsyncTask, es mejor hacer un AsyncTaskLoader, asi que he preferido
+    // hacerlo loader:
+    public static class QuizLoader extends AsyncTaskLoader<Cursor> {
+        ContentResolver mContentResolver;
+
+        public QuizLoader(Context ctx, ContentResolver cr){
+            super(ctx);
+            mContentResolver = cr;
+        }
+
+        @Override
+        protected void onStartLoading() {
+            Log.d(TAG, "onStartLoading: starting...");
+            super.onStartLoading();
+
+            forceLoad();
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+            Log.d(TAG, "loadInBackGround: loading...");
+            return mContentResolver.query(DroidTermsExampleContract.CONTENT_URI, null, null, null, null);
+        }
+
+//        @Override
+//        public void deliverResult(Cursor data) {
+//            super.deliverResult(data);
+//        }
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new QuizLoader(this, getContentResolver());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        mData = data;
+        Log.d(TAG, "data.toString() = " + data.toString());
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        //Ahora mismo no necesitamos hacer nada aqui.
+    }
+
 
 }

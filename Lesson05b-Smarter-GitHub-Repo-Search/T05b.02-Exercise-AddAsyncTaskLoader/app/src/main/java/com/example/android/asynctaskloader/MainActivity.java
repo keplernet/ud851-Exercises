@@ -125,6 +125,10 @@ public class MainActivity extends AppCompatActivity
         LoaderManager loaderManager = getSupportLoaderManager();
         Loader loader = loaderManager.getLoader(GITHUB_SEARCH_LOADER);
         if(loader == null){
+            //Nota mia: Por lo q veo, aqui nunca entra, ya que, al arrancar la app,
+            // onCreate ejecuta loaderManager.initLoader(GITHUB_SEARCH_LOADER,..), asi q al dar al
+            // boton de buscar se ejecuta este metodo pero githubSearchLoader ya no es null,
+            // asi q en este metodo nunca es null!!
             Log.d(TAG, "makeGithubSearchQuery : before initLoader(...)");
             loaderManager.initLoader(GITHUB_SEARCH_LOADER, queryBundle, this);
             Log.d(TAG, "makeGithubSearchQuery : after initLoader(...)");
