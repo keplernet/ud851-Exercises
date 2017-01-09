@@ -1,11 +1,5 @@
 package com.example.android.waitlist.data;
 
-import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-
-import com.example.android.waitlist.data.WaitlistContract.*;
-
 // TODO (1) extend the SQLiteOpenHelper class
 public class WaitlistDbHelper extends SQLiteOpenHelper {
 
