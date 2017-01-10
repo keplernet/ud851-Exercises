@@ -22,6 +22,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
@@ -157,13 +158,35 @@ public class TaskContentProvider extends ContentProvider {
     public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
 
         // TODO (1) Get access to the database and write URI matching code to recognize a single item
+        SQLiteDatabase db = mTaskDbHelper.getWritableDatabase();
 
-        // TODO (2) Write the code to delete a single row of data
-        // [Hint] Use selections to delete an item by its row ID
+        int numDeleted = 0;
+
+        int match = sUriMatcher.match(uri);
+        switch(match){
+            case TASK_WITH_ID:
+                // TODO (2) Write the code to delete a single row of data
+                // [Hint] Use selections to delete an item by its row ID
+                String id = uri.getPathSegments().get(1);
+
+                String sel = "_id=?";
+                String[] selArgs = new String[]{id};
+
+                numDeleted = db.delete(TaskContract.TaskEntry.TABLE_NAME, sel, selArgs);
+                if (numDeleted <= 0) {
+                    throw new SQLException("Failed to delete row with uri: " + uri);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
 
         // TODO (3) Notify the resolver of a change and return the number of items deleted
+        if(numDeleted > 0){
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
 
-        throw new UnsupportedOperationException("Not yet implemented");
+        return numDeleted;
     }
 
 

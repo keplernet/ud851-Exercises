@@ -188,18 +188,69 @@ public class TaskContentProvider extends ContentProvider {
     }
 
 
+    //ALAN: Este metodo NO se usa en esta app (al menos ahora mismo), pero le meto el codigo por
+    // completar las CRUD operations, por si hiciera falta, y por si se abriera el acceso a estos
+    // datos para otras apps (exported = true en AndroidManifest.xml) para q los developers tengan
+    // disponibles las operaciones que quiero yo q tengan (asi q si no quisieramos que pudieran
+    // hacer update tampoco hariamos nada en este metodo).
     @Override
     public int update(@NonNull Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
 
-        throw new UnsupportedOperationException("Not yet implemented");
+        SQLiteDatabase db = mTaskDbHelper.getWritableDatabase();
+
+        //Keep track of if an update occurs
+        int tasksUpdated;
+
+        // match code
+        int match = sUriMatcher.match(uri);
+
+        switch (match) {
+            case TASK_WITH_ID:
+                //update a single task by getting the id
+                String id = uri.getPathSegments().get(1);
+                //using selections
+                tasksUpdated = db.update(TABLE_NAME, values, "_id=?", new String[]{id});
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
+
+        if (tasksUpdated != 0) {
+            //set notifications if a task was updated
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        // return number of tasks updated
+        return tasksUpdated;
+//        throw new UnsupportedOperationException("Not yet implemented");
     }
 
 
+    //ALAN: Añadido por mi (copiado de una de las lecciones de ContentProviders), aunque no se
+    // usa en esta app por ahora:
+    //Here's an example of getType for the ToDo list app:
+    /* getType() handles requests for the MIME type of data
+    We are working with two types of data:
+    1) a directory and 2) a single row of data.
+    This method will not be used in our app, but gives a way to standardize the data formats
+    that your provider accesses, and this can be useful for data organization.
+    For now, this method will not be used but will be provided for completeness.
+     */
     @Override
     public String getType(@NonNull Uri uri) {
+        int match = sUriMatcher.match(uri);
 
-        throw new UnsupportedOperationException("Not yet implemented");
+        switch (match) {
+            case TASKS:
+                // directory
+                return "vnd.android.cursor.dir" + "/" + TaskContract.AUTHORITY + "/" + TaskContract.PATH_TASKS;
+            case TASK_WITH_ID:
+                // single item type
+                return "vnd.android.cursor.item" + "/" + TaskContract.AUTHORITY + "/" + TaskContract.PATH_TASKS;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
     }
 
 }
