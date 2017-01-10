@@ -33,6 +33,8 @@ import android.util.Log;
 import android.view.View;
 
 import com.example.android.todolist.data.TaskContract;
+import android.content.Context;
+import android.content.ContentResolver;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -137,6 +139,60 @@ public class MainActivity extends AppCompatActivity implements
         getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, this);
     }
 
+	public static class TodoLoader extends AsyncTaskLoader<Cursor> {
+
+		Context context;
+		ContentResolver contentResolver;
+		
+		// Initialize a Cursor, this will hold all the task data
+		Cursor mTaskData = null;
+		
+		public TodoLoader(Context ctx, ContentResolver cr){
+			super(ctx);
+			context = ctx;
+			contentResolver = cr;
+		}
+
+	// onStartLoading() is called when a loader first starts loading data
+	@Override
+	protected void onStartLoading() {
+		if (mTaskData != null) {
+			// Delivers any previously loaded data immediately
+			deliverResult(mTaskData);
+		} else {
+			// Force a new load
+			forceLoad();
+		}
+	}
+
+	// loadInBackground() performs asynchronous loading of data
+	@Override
+	public Cursor loadInBackground() {
+		// Will implement to load data
+
+		// Query and load all task data in the background; sort by priority
+		// [Hint] use a try/catch block to catch any errors in loading data
+
+		try {
+			return contentResolver.query(TaskContract.TaskEntry.CONTENT_URI,
+											  null,
+											  null,
+											  null,
+											  TaskContract.TaskEntry.COLUMN_PRIORITY);
+
+		} catch (Exception e) {
+			Log.e(TAG, "Failed to asynchronously load data.");
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// deliverResult sends the result of the load, a Cursor, to the registered listener
+	public void deliverResult(Cursor data) {
+		mTaskData = data;
+		super.deliverResult(data);
+	}
+}
 
     /**
      * Instantiates and returns a new AsyncTaskLoader with the given ID.
@@ -147,51 +203,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public Loader<Cursor> onCreateLoader(int id, final Bundle loaderArgs) {
 
-        return new AsyncTaskLoader<Cursor>(this) {
-
-            // Initialize a Cursor, this will hold all the task data
-            Cursor mTaskData = null;
-
-            // onStartLoading() is called when a loader first starts loading data
-            @Override
-            protected void onStartLoading() {
-                if (mTaskData != null) {
-                    // Delivers any previously loaded data immediately
-                    deliverResult(mTaskData);
-                } else {
-                    // Force a new load
-                    forceLoad();
-                }
-            }
-
-            // loadInBackground() performs asynchronous loading of data
-            @Override
-            public Cursor loadInBackground() {
-                // Will implement to load data
-
-                // Query and load all task data in the background; sort by priority
-                // [Hint] use a try/catch block to catch any errors in loading data
-
-                try {
-                    return getContentResolver().query(TaskContract.TaskEntry.CONTENT_URI,
-                            null,
-                            null,
-                            null,
-                            TaskContract.TaskEntry.COLUMN_PRIORITY);
-
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to asynchronously load data.");
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-
-            // deliverResult sends the result of the load, a Cursor, to the registered listener
-            public void deliverResult(Cursor data) {
-                mTaskData = data;
-                super.deliverResult(data);
-            }
-        };
+        return new TodoLoader(this, getContentResolver());
 
     }
 
