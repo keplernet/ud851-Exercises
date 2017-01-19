@@ -18,12 +18,9 @@ package com.example.android.implicitintents;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.ShareCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Toast;
-
-import static android.R.attr.mimeType;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void onClickOpenAddressButton(View v) {
         String addressString = "1600 Amphitheatre Parkway, CA";
+
 		//Cambio la forma de crear addressUri, por la forma mas pro 
 		// con un new Uri.Builder q lo hace por mi y hay menos 
 		//probabilidad de error.
@@ -63,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
 			//.query()
 			.appendQueryParameter("q", addressString)
 			.build();
+
         showMap(addressUri);
     }
 

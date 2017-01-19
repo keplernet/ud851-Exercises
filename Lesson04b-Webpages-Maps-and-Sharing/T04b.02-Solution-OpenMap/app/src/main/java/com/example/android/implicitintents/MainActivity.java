@@ -51,18 +51,12 @@ public class MainActivity extends AppCompatActivity {
         // COMPLETED (5) Store an address in a String
         String addressString = "1600 Amphitheatre Parkway, CA";
 
-        // COMPLETED (6) Use Uri.parse with the appropriate scheme and query to form the Uri for the address
-		//Cambio la forma de crear addressUri, por la forma mas pro 
-		// con un new Uri.Builder q lo hace por mi y hay menos 
-		//probabilidad de error.
-        //Uri addressUri = Uri.parse("geo:0,0?q=" + addressString);
-		Uri addressUri = new Uri.Builder().scheme("geo")
-			.authority("0,0")
-			//.path()
-			//.appendPath()
-			//.query()
-			.appendQueryParameter("q", addressString)
-			.build();
+        // COMPLETED (6) Use Uri.Builder with the appropriate scheme and query to form the Uri for the address
+        Uri.Builder builder = new Uri.Builder();
+        builder.scheme("geo")
+                .path("0,0")
+                .query(addressString);
+        Uri addressUri = builder.build();
 
         // COMPLETED (7) Replace the Toast with a call to showMap, passing in the Uri from the previous step
         showMap(addressUri);

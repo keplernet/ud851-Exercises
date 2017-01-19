@@ -20,13 +20,16 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:25.1.0'
-    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
-    //add Recycler view dependencies; must match SDK version (24)
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-beta4'
+
+    //add Recycler view dependencies; must match SDK version
     compile 'com.android.support:recyclerview-v7:25.1.0'
+
     //FAB dependencies
     compile 'com.android.support:design:25.1.0'
+
     //Testing
     // Instrumentation dependencies use androidTestCompile
     // (as opposed to testCompile for local unit tests run in the JVM)
